@@ -1,0 +1,11 @@
+opam-version: "1.2"
+name: "kludge"
+version: "0.0.1"
+maintainer: "pjb4752 <pjb4752@gmail.com>"
+authors: "pjb4752 <pjb4752@gmail.com>"
+homepage: "https://github.com/pjb4752/kludge"
+bug-reports: "https://github.com/pjb4752/kludge/issues"
+dev-repo: "https://github.com/pjb4752/kludge.git"
+build: [
+  ["jbuilder" "build" "--only" "kludge" "--root" "." "-j" jobs "@install"]
+]
