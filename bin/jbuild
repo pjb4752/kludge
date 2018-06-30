@@ -1,6 +1,6 @@
 (executables
  ((names (main))
-  (libraries (kludge lua))))
+  (libraries (kludge))))
 
 (install
  ((section bin)

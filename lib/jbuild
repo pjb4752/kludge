@@ -1,4 +1,4 @@
 (library
  ((name kludge)
   (public_name kludge)
-  (libraries (lua))))
+  (libraries (chunkee lua))))
