@@ -43,11 +43,13 @@ let compile table modul line =
   (typecheck table modul resolved) >>= fun typechecked ->
   return (table, modul, typechecked)
 
-let eval lua_state strings =
-  let lua_str = String.concat "\n" strings in
-  match Lua.eval lua_state lua_str with
+let eval lua_state str =
+  match Lua.eval lua_state str with
   | Ok () -> ()
   | Error e -> () (* ignore error for now, it's printed by lua *)
+
+let eval_many lua_state strings =
+  List.iter (eval lua_state) strings
 
 let rec loop lua_state table modul =
   let () = printf "-> " in
@@ -63,7 +65,7 @@ let rec loop lua_state table modul =
         let () = print_result table typechecked in
         let emitted = emit typechecked in
         let () = print_emitted emitted in
-        eval lua_state emitted
+        eval_many lua_state emitted
       | Error e -> printf "%s\n" (Chunkee.Cmpl_err.to_string e) in
     loop lua_state table modul
   end
