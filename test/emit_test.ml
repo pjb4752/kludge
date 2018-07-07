@@ -71,7 +71,7 @@ let suite =
     "emit infix application">::
       (fun context ->
         let name = C.Module.Var.Name.from_string "+" in
-        let modname = C.Module.qual_name Kludge.Stdlib.common_module in
+        let modname = C.Module.qual_name Stdlib.common_module in
         let fn = C.Node.SymLit (C.Name.Module (modname, name)) in
         let args = [C.Node.NumLit 1.0; C.Node.NumLit 2.0] in
         let lua_stmt = Lua_stmt.make_expr "(1.000000 + 2.000000)" in
@@ -86,7 +86,7 @@ let suite =
     "emit prefix application">::
       (fun context ->
         let name = C.Module.Var.Name.from_string "print" in
-        let modname = C.Module.qual_name Kludge.Stdlib.common_module in
+        let modname = C.Module.qual_name Stdlib.common_module in
         let fn = C.Node.SymLit (C.Name.Module (modname, name)) in
         let args = [C.Node.StrLit "hello"] in
         let lua_stmt = Lua_stmt.make_expr "print(\"hello\")" in
