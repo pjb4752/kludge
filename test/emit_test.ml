@@ -39,7 +39,7 @@ let suite =
           (Lua_stmt.make_expr "function(p1)\nreturn p1\nend")
       );
 
-    "emit def expression">::
+    "emit def statement">::
       (fun context ->
         let name = C.Node.VarDef.Name.from_string "hi"
         and t = C.Node.TypeDef.from_string "num" in
