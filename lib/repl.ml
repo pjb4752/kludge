@@ -59,15 +59,16 @@ let rec loop lua_state table modul =
   match next_line with
   | None -> printf "^D\n"
   | Some line -> begin
-    let () =
-      match compile table modul line with
-      | Ok (table, modul, typechecked) ->
-        let () = print_result table typechecked in
-        let emitted = emit typechecked in
-        let () = print_emitted emitted in
-        eval_many lua_state emitted
-      | Error e -> printf "%s\n" (Chunkee.Cmpl_err.to_string e) in
-    loop lua_state table modul
+    match compile table modul line with
+    | Ok (table, modul, typechecked) ->
+      let () = print_result table typechecked in
+      let emitted = emit typechecked in
+      let () = print_emitted emitted in
+      let () = eval_many lua_state emitted in
+      loop lua_state table modul
+    | Error e ->
+      let () = printf "%s\n" (Chunkee.Cmpl_err.to_string e) in
+      loop lua_state table modul
   end
 
 let enter () =
