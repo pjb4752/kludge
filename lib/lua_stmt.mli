@@ -14,4 +14,4 @@ val preamble_stmt: t -> string
 
 val result_expr: t -> string
 
-val to_result_string: t -> string
+val to_result_string: ?target:string -> t -> string

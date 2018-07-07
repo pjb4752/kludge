@@ -32,8 +32,8 @@ let result_expr = function
   | Stmt (_, { var }) -> var
   | Expr (_, { expr }) -> expr
 
-let to_result_string lua_stmt =
+let to_result_string ?target:(target="return") lua_stmt =
   let preamble = preamble_stmt lua_stmt in
   let result = result_expr lua_stmt in
-  if preamble = "" then sprintf "return %s" result
-  else sprintf "%s\nreturn %s" preamble result
+  if preamble = "" then sprintf "%s %s" target result
+  else sprintf "%s\n%s %s" preamble target result

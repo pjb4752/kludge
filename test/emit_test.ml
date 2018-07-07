@@ -3,6 +3,7 @@ open OUnit2
 
 module C = Chunkee
 module Lua_stmt = Kludge.Lua_stmt
+module Stdlib = Kludge.Stdlib
 
 let suite =
   "Emit suite">::: [
@@ -48,6 +49,22 @@ let suite =
         let preamble = Lua_stmt.make_expr "5.000000" in
         assert_equal
           (emit_node (C.Node.Def (var, expr)))
+          (Lua_stmt.insert_preamble lua_stmt preamble)
+      );
+
+    "emit if expression">::
+      (fun context ->
+        let name = C.Module.Var.Name.from_string "true" in
+        let modname = C.Module.qual_name Kludge.Stdlib.common_module in
+        let tst = C.Node.SymLit (C.Name.Module (modname, name)) in
+        let iff = C.Node.SymLit (C.Name.Local "a") in
+        let els = C.Node.SymLit (C.Name.Local "b") in
+        let tst_str = "__if1 = nil\nif true then\n" in
+        let body_str = "__if1 = a\nelse\n__if1 = b\nend" in
+        let lua_stmt = Lua_stmt.make_stmt "__if1" (tst_str ^ body_str) in
+        let preamble = Lua_stmt.make_expr "true" in
+        assert_equal
+          (emit_node (C.Node.If (tst, iff, els)))
           (Lua_stmt.insert_preamble lua_stmt preamble)
       );
 

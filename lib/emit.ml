@@ -41,6 +41,18 @@ let emit_fn fn params body =
   let fn_expr = sprintf "function(%s)\n%s\nend" params body_expr in
   Lua_stmt.make_expr fn_expr
 
+let emit_if fn tst iff els =
+  let tst_expr = fn tst in
+  let tst_result = Lua_stmt.result_expr tst_expr in
+  let iff_str = Lua_stmt.to_result_string ~target:"__if1 =" (fn iff) in
+  let els_str = Lua_stmt.to_result_string ~target:"__if1 =" (fn els) in
+  let if_str = String.concat "\n" [
+    sprintf "__if1 = nil\nif %s then" tst_result;
+    sprintf "%s\nelse\n%s\nend" iff_str els_str
+  ] in
+  let if_stmt = Lua_stmt.make_stmt "__if1" if_str in
+  Lua_stmt.insert_preamble if_stmt tst_expr
+
 let build_arg_stmts fn args =
   let rec emit_args' arg_exprs = function
     | [] -> arg_exprs
@@ -95,6 +107,7 @@ let rec emit_node = function
   | N.SymLit s -> emit_sym s
   | N.Def (n, e) -> emit_def emit_node n e
   | N.Fn (p, b) -> emit_fn emit_node p b
+  | N.If (t, i, e) -> emit_if emit_node t i e
   | N.Apply (f, a) -> emit_apply emit_node f a
 
 let emit_typed_node (node, t) =
