@@ -124,6 +124,7 @@ let rec emit_node = function
   | N.If (t, i, e) -> emit_if emit_node t i e
   | N.Let (b, e) -> emit_let emit_node b e
   | N.Apply (f, a) -> emit_apply emit_node f a
+  | N.Cast (t, e) -> emit_node e
 
 let emit_typed_node (node, t) =
   Lua_stmt.to_result_string (emit_node node)

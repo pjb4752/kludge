@@ -119,4 +119,11 @@ let suite =
           (emit_node (C.Node.Apply (fn, [])))
           (Lua_stmt.insert_preamble lua_stmt preamble)
       );
+
+    "emit cast expression">::
+      (fun context ->
+        assert_equal
+          (emit_node (C.Node.NumLit 2.0))
+          (Lua_stmt.make_expr "2.000000")
+      );
   ]
