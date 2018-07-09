@@ -53,6 +53,20 @@ let emit_if fn tst iff els =
   let if_stmt = Lua_stmt.make_stmt "__if1" if_str in
   Lua_stmt.insert_preamble if_stmt tst_expr
 
+let build_binding_stmts fn bindings =
+  List.map (fun b ->
+    let (name, expr) = C.Node.Binding.to_tuple b in
+    let name = C.Node.Binding.Name.to_string name in
+    let result = sprintf "%s =" name in
+    Lua_stmt.to_result_string ~target:result (fn expr)) bindings
+
+let emit_let fn bindings expr =
+  let bind_strs = build_binding_stmts fn bindings in
+  let bind_str = String.concat "\n" bind_strs in
+  let expr_str = Lua_stmt.to_result_string ~target:"__let1 =" (fn expr) in
+  let let_str = sprintf "__let1 = nil\ndo\n%s\n%s\nend" bind_str expr_str in
+  Lua_stmt.make_stmt "__let1" let_str
+
 let build_arg_stmts fn args =
   let rec emit_args' arg_exprs = function
     | [] -> arg_exprs
@@ -108,6 +122,7 @@ let rec emit_node = function
   | N.Def (n, e) -> emit_def emit_node n e
   | N.Fn (p, b) -> emit_fn emit_node p b
   | N.If (t, i, e) -> emit_if emit_node t i e
+  | N.Let (b, e) -> emit_let emit_node b e
   | N.Apply (f, a) -> emit_apply emit_node f a
 
 let emit_typed_node (node, t) =

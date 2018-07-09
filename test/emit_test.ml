@@ -68,6 +68,18 @@ let suite =
           (Lua_stmt.insert_preamble lua_stmt preamble)
       );
 
+    "emit let expresssion">::
+      (fun context ->
+        let name = C.Node.Binding.Name.from_string "b1" in
+        let expr = C.Node.SymLit (C.Name.Local "a") in
+        let bindings = [C.Node.Binding.from_node name expr] in
+        let body = C.Node.SymLit (C.Name.Local "b1") in
+        let let_str = "__let1 = nil\ndo\nb1 = a\n__let1 = b1\nend" in
+        assert_equal
+          (emit_node (C.Node.Let (bindings, body)))
+          (Lua_stmt.make_stmt "__let1" let_str)
+      );
+
     "emit infix application">::
       (fun context ->
         let name = C.Module.Var.Name.from_string "+" in
