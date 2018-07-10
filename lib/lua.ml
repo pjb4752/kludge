@@ -1,4 +1,4 @@
-open Result
+open Thwack.Result
 
 type state = Lua_api_lib.state
 
