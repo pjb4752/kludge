@@ -45,6 +45,10 @@ let modules = [
   list_module;
 ]
 
+let pervasive = { C.Pervasive.modul = common_module }
+
+let stdlib = C.Symbol_table.with_pervasive pervasive
+
 let core = modules
 
 let has_common_name qual_name =

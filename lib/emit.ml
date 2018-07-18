@@ -1,5 +1,5 @@
 open Printf
-open Chunkee.Extensions
+open Thwack.Extensions
 
 module C = Chunkee
 module N = C.Node

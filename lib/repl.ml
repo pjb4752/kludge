@@ -23,13 +23,13 @@ let lex = Chunkee.Lex.lex
 
 let parse = Chunkee.Parse.parse
 
-let define = Chunkee.Resolve.define_vars
+let define = Chunkee.Resolve.Define.define_vars
 
 let emit = Emit.emit
 
 let resolve table modul nodes =
-  let table = Chunkee.Table.update_module table modul in
-  match Chunkee.Resolve.resolve table modul nodes with
+  let table = Chunkee.Symbol_table.update_module table modul in
+  match Chunkee.Resolve.Resolve.resolve_names table modul nodes with
   | Ok resolved -> Ok (table, resolved)
   | Error e -> Error e
 
@@ -54,8 +54,7 @@ let eval_many lua_state strings =
 let rec loop lua_state table modul =
   let () = printf "-> " in
   let next_line =
-    try Some (read_line ())
-    with End_of_file -> None in
+    try Some (read_line ()) with End_of_file -> None in
   match next_line with
   | None -> printf "^D\n"
   | Some line -> begin
@@ -72,6 +71,6 @@ let rec loop lua_state table modul =
   end
 
 let enter () =
-  let modul = repl_module and table = Chunkee.Table.with_stdlib in
-  let table = Chunkee.Table.insert_module table modul in
-  loop (Lua.new_state ()) table modul
+  let modul = repl_module and symbol_table = Stdlib.stdlib in
+  let symbol_table = Chunkee.Symbol_table.insert_module symbol_table modul in
+  loop (Lua.new_state ()) symbol_table modul

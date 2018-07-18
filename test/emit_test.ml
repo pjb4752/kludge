@@ -5,6 +5,10 @@ module C = Chunkee
 module Lua_stmt = Kludge.Lua_stmt
 module Stdlib = Kludge.Stdlib
 
+let pervasive_module = Stdlib.pervasive.modul
+
+let pervasive_name = C.Module.qual_name pervasive_module
+
 let suite =
   "Emit suite">::: [
     "emit number literal">::
@@ -55,7 +59,7 @@ let suite =
     "emit if expression">::
       (fun context ->
         let name = C.Module.Var.Name.from_string "true" in
-        let modname = C.Module.qual_name Kludge.Stdlib.common_module in
+        let modname = pervasive_name in
         let tst = C.Node.SymLit (C.Name.Module (modname, name)) in
         let iff = C.Node.SymLit (C.Name.Local "a") in
         let els = C.Node.SymLit (C.Name.Local "b") in
@@ -83,7 +87,7 @@ let suite =
     "emit infix application">::
       (fun context ->
         let name = C.Module.Var.Name.from_string "+" in
-        let modname = C.Module.qual_name Stdlib.common_module in
+        let modname = pervasive_name in
         let fn = C.Node.SymLit (C.Name.Module (modname, name)) in
         let args = [C.Node.NumLit 1.0; C.Node.NumLit 2.0] in
         let lua_stmt = Lua_stmt.make_expr "(1.000000 + 2.000000)" in
@@ -98,7 +102,7 @@ let suite =
     "emit prefix application">::
       (fun context ->
         let name = C.Module.Var.Name.from_string "print" in
-        let modname = C.Module.qual_name Stdlib.common_module in
+        let modname = pervasive_name in
         let fn = C.Node.SymLit (C.Name.Module (modname, name)) in
         let args = [C.Node.StrLit "hello"] in
         let lua_stmt = Lua_stmt.make_expr "print(\"hello\")" in
