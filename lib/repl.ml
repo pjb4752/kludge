@@ -51,6 +51,10 @@ let eval lua_state str =
 let eval_many lua_state strings =
   List.iter (eval lua_state) strings
 
+let load_pervasive lua_state =
+  let require_stmt = Emit.emit_require Stdlib.pervasive_name in
+  let () = eval lua_state require_stmt in lua_state
+
 let rec loop lua_state table modul =
   let () = printf "-> " in
   let next_line =
@@ -73,4 +77,6 @@ let rec loop lua_state table modul =
 let enter () =
   let modul = repl_module and symbol_table = Stdlib.stdlib in
   let symbol_table = Chunkee.Symbol_table.insert_module symbol_table modul in
-  loop (Lua.new_state ()) symbol_table modul
+  let lua_state = Lua.new_state () in
+  let lua_state = load_pervasive lua_state in
+  loop lua_state symbol_table modul

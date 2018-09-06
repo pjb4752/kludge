@@ -65,7 +65,7 @@ let suite =
         let op_name = C.Module.Var.Name.from_string "+" in
         let mod_name = pervasive_name in
         let expr = C.Node.SymLit (C.Name.Module (mod_name, op_name)) in
-        let lua_stmt = Lua_stmt.make_stmt "hi" "hi = core_common.__add" in
+        let lua_stmt = Lua_stmt.make_stmt "hi" "hi = core_common.add" in
         let preamble = Lua_stmt.make_expr "+" in
         assert_equal
           (emit_node (C.Node.Def (var, expr)))

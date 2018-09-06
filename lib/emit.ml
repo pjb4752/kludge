@@ -8,6 +8,15 @@ let is_infix_op = function
   | C.Name.Module (qn, vn) -> Stdlib.is_infix_op qn vn
   | C.Name.Local _ -> false
 
+let emit_mod_alias parts = String.concat "_" parts
+
+let emit_require modname =
+  let parts = C.Module.Qual_name.to_list modname in
+  let parts = List.map C.Module.Name.to_string parts in
+  let alias = emit_mod_alias parts in
+  let require_path = String.concat "." parts in
+  sprintf "%s = require 'flopcore.%s'" alias require_path
+
 let emit_num n =
   Lua_stmt.make_expr (sprintf "%f" n)
 

@@ -14,11 +14,11 @@ let make_module root name vars =
 let root = C.Module.Name.from_string "core"
 
 let math_operators = [
-  ("+", "core_common.__add");
-  ("-", "core_common.__sub");
-  ("*", "core_common.__mlt");
-  ("/", "core_common.__div");
-  ("%", "core_common.__mod");
+  ("+", "core_common.add");
+  ("-", "core_common.sub");
+  ("*", "core_common.mlt");
+  ("/", "core_common.div");
+  ("%", "core_common.mod");
 ]
 
 let wrapped_operators = math_operators
@@ -55,6 +55,8 @@ let modules = [
 ]
 
 let pervasive = { C.Pervasive.modul = common_module }
+
+let pervasive_name = C.Module.qual_name pervasive.modul
 
 let stdlib = C.Symbol_table.with_pervasive pervasive
 
