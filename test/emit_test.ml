@@ -56,6 +56,22 @@ let suite =
           (Lua_stmt.insert_preamble lua_stmt preamble)
       );
 
+    "emit def statement with wrapped operator">::
+      (fun context ->
+        let var_name = C.Node.VarDef.Name.from_string "hi" in
+        let t = C.Node.TypeDef.from_string "num" in
+        let t = C.Node.TypeDef.from_list [t; t; t] in
+        let var = C.Node.VarDef.from_parts var_name t in
+        let op_name = C.Module.Var.Name.from_string "+" in
+        let mod_name = pervasive_name in
+        let expr = C.Node.SymLit (C.Name.Module (mod_name, op_name)) in
+        let lua_stmt = Lua_stmt.make_stmt "hi" "hi = core_common.__add" in
+        let preamble = Lua_stmt.make_expr "+" in
+        assert_equal
+          (emit_node (C.Node.Def (var, expr)))
+          (Lua_stmt.insert_preamble lua_stmt preamble)
+      );
+
     "emit if expression">::
       (fun context ->
         let name = C.Module.Var.Name.from_string "true" in

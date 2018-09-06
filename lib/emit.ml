@@ -79,7 +79,7 @@ let build_args fn args =
   (result_exprs, arg_exprs)
 
 let emit_infix_apply fn operator args =
-  let operator = Lua_stmt.result_expr (emit_sym operator) in
+  let operator = Lua_stmt.result_expr ~wrap_ops:false (emit_sym operator) in
   let (result_exprs, arg_exprs) = build_args fn args in
   let (left, right) =
     match result_exprs with

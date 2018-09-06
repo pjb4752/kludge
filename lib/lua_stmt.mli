@@ -12,6 +12,8 @@ val is_expr: t -> bool
 
 val preamble_stmt: t -> string
 
-val result_expr: t -> string
+val result_expr: ?wrap_ops:bool -> t -> string
 
 val to_result_string: ?target:string -> t -> string
+
+val to_string: t -> string

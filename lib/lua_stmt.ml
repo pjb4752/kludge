@@ -1,3 +1,4 @@
+open Thwack
 open Printf
 
 type stmt = { var: string; stmt: string }
@@ -28,12 +29,23 @@ let preamble_stmt lua_stmt =
     | Expr (ps, _) -> List.fold_left preamble_stmt' strs ps in
   String.concat "\n" (preamble_stmt' [] lua_stmt)
 
-let result_expr = function
+let result_expr ?wrap_ops:(wrap_ops=true) = function
   | Stmt (_, { var }) -> var
-  | Expr (_, { expr }) -> expr
+  | Expr (_, { expr }) ->
+      if wrap_ops then
+        Option.get_else (Stdlib.wrapped_op expr) expr
+      else expr
 
 let to_result_string ?target:(target="return") lua_stmt =
   let preamble = preamble_stmt lua_stmt in
   let result = result_expr lua_stmt in
   if preamble = "" then sprintf "%s %s" target result
   else sprintf "%s\n%s %s" preamble target result
+
+let rec to_string lua_stmt =
+  let sprintf_cs cs = String.concat ", " (List.map to_string cs) in
+  match lua_stmt with
+  | Stmt (cs, { var; stmt }) ->
+      sprintf "Stmt ([%s], { var: %s, stmt %s })" (sprintf_cs cs) var stmt
+  | Expr (cs, { expr }) ->
+      sprintf "Expr ([%s], { expr: %s })" (sprintf_cs cs) expr
