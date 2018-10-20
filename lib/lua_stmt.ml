@@ -40,6 +40,7 @@ let to_result_string ?target:(target="return") lua_stmt =
   let preamble = preamble_stmt lua_stmt in
   let result = result_expr lua_stmt in
   if preamble = "" then sprintf "%s %s" target result
+  else if target = "" then sprintf "%s" preamble
   else sprintf "%s\n%s %s" preamble target result
 
 let rec to_string lua_stmt =

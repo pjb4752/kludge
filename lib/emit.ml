@@ -2,17 +2,18 @@ open Printf
 open Thwack.Extensions
 
 module C = Chunkee
-module N = C.Node
+module Node = C.Ast.Resolved_node
+module N = C.Ast.Resolved_node
 
 let is_infix_op = function
-  | C.Name.Module (qn, vn) -> Stdlib.is_infix_op qn vn
-  | C.Name.Local _ -> false
+  | C.Name.Var.Module (qn, vn) -> Stdlib.is_infix_op qn vn
+  | C.Name.Var.Local _ -> false
 
 let emit_mod_alias parts = String.concat "_" parts
 
 let emit_require modname =
-  let parts = C.Module.Qual_name.to_list modname in
-  let parts = List.map C.Module.Name.to_string parts in
+  let parts = C.Mod_name.to_list modname in
+  let parts = List.map C.Mod_name.Name.to_string parts in
   let alias = emit_mod_alias parts in
   let require_path = String.concat "." parts in
   sprintf "%s = require 'flopcore.%s'" alias require_path
@@ -26,8 +27,8 @@ let emit_str s =
 let emit_sym s =
   let symbol =
     match s with
-    | C.Name.Local s -> s
-    | C.Name.Module (_, vn) -> C.Module.Var.Name.to_string vn in
+    | C.Name.Var.Local s -> s
+    | C.Name.Var.Module (_, vn) -> C.Var.Name.to_string vn in
   Lua_stmt.make_expr symbol
 
 let vardef_name vardef =
@@ -38,7 +39,8 @@ let param_str params =
   String.concat ", " params
 
 let emit_def fn name expr =
-  let name = vardef_name name and expr_stmt = fn expr in
+  let name = N.Name.to_string name in
+  let expr_stmt = fn expr in
   let result_expr = Lua_stmt.result_expr expr_stmt in
   let assignment = sprintf "%s = %s" name result_expr in
   let def_stmt = Lua_stmt.make_stmt name assignment in
@@ -64,8 +66,8 @@ let emit_if fn tst iff els =
 
 let build_binding_stmts fn bindings =
   List.map (fun b ->
-    let (name, expr) = C.Node.Binding.to_tuple b in
-    let name = C.Node.Binding.Name.to_string name in
+    let (name, expr) = N.Binding.to_tuple b in
+    let name = N.Binding.Name.to_string name in
     let result = sprintf "%s =" name in
     Lua_stmt.to_result_string ~target:result (fn expr)) bindings
 
@@ -120,7 +122,7 @@ let emit_apply fn callable args =
   match callable with
   | N.SymLit n when is_infix_op n -> emit_infix_apply fn n args
   | N.SymLit n -> emit_prefix_apply fn n args
-  | N.Fn (p, b) -> emit_literal_apply fn (N.Fn (p, b)) args
+  | N.Fn (p, r, b) -> emit_literal_apply fn (N.Fn (p, r, b)) args
   (*| N.Apply (f, a) -> emit_apply fn f a*)
   | _ -> assert false
 
@@ -128,14 +130,15 @@ let rec emit_node = function
   | N.NumLit n -> emit_num n
   | N.StrLit s -> emit_str s
   | N.SymLit s -> emit_sym s
+  | N.Rec (n, f) -> Lua_stmt.make_expr ""
   | N.Def (n, e) -> emit_def emit_node n e
-  | N.Fn (p, b) -> emit_fn emit_node p b
+  | N.Fn (p, _, b) -> emit_fn emit_node p b
   | N.If (t, i, e) -> emit_if emit_node t i e
   | N.Let (b, e) -> emit_let emit_node b e
   | N.Apply (f, a) -> emit_apply emit_node f a
   | N.Cast (t, e) -> emit_node e
 
 let emit_typed_node (node, t) =
-  Lua_stmt.to_result_string (emit_node node)
+  Lua_stmt.to_result_string ~target:"" (emit_node node)
 
 let emit nodes = List.map emit_typed_node nodes

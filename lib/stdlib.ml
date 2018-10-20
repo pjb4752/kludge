@@ -1,17 +1,17 @@
 open Thwack.Option
 module C = Chunkee
 
-let make_var modul (name, t) =
-  let name = C.Module.Var.Name.from_string name in
-  C.Module.define_var modul name t
+let make_var modul (name, tipe) =
+  let name = C.Var.Name.from_string name in
+  C.Module.define_var modul name tipe
 
 let make_module root name vars =
-  let name = C.Module.Name.from_string name in
-  let path = C.Module.Path.from_list [root] in
+  let name = C.Mod_name.Name.from_string name in
+  let path = C.Mod_name.Path.from_list [root] in
   let mempty = C.Module.from_parts path name in
   List.fold_left make_var mempty vars
 
-let root = C.Module.Name.from_string "core"
+let root = C.Mod_name.Name.from_string "core"
 
 let math_operators = [
   ("+", "core_common.add");
@@ -21,11 +21,22 @@ let math_operators = [
   ("%", "core_common.mod");
 ]
 
-let wrapped_operators = math_operators
+let bool_operators = [
+  ("=", "core_common.eq");
+  (">", "core_common.gtn");
+  (">=", "core_common.gte");
+  ("<", "core_common.ltn");
+  ("<=", "core_common.lte");
+  ("not=", "core_common.neq");
+]
+
+let wrapped_operators = math_operators @ bool_operators
 
 let infix_operators = List.map fst wrapped_operators
 
 let math_fntype = C.Type.Fn ([C.Type.Num; C.Type.Num], C.Type.Num)
+let bool_fntype = C.Type.Fn ([C.Type.Num; C.Type.Num], C.Type.Bool)
+
 let common_module =
   let name = "common"
   and generic_vars = [
@@ -34,7 +45,8 @@ let common_module =
     ("print", C.Type.Fn ([C.Type.Str], C.Type.Unit))
   ] in
   let math_vars = List.map (fun (n, _) -> (n, math_fntype)) math_operators in
-  let vars = generic_vars @ math_vars in
+  let bool_vars = List.map (fun (n, _) -> (n, bool_fntype)) bool_operators in
+  let vars = generic_vars @ math_vars @ bool_vars in
   make_module root name vars
 
 let list_module =
@@ -56,17 +68,20 @@ let modules = [
 
 let pervasive = { C.Pervasive.modul = common_module }
 
-let pervasive_name = C.Module.qual_name pervasive.modul
+let pervasive_name = C.Module.name pervasive.modul
 
-let stdlib = C.Symbol_table.with_pervasive pervasive
+(*let stdlib =*)
+  (*let lib = C.Symbol_table.make pervasive in*)
+  (*(*let lib = C.Symbol_table.insert_module lib list_module in*)*)
+  (*lib*)
 
 let core = modules
 
 let has_common_name qual_name =
-  (C.Module.qual_name common_module) = qual_name
+  (C.Module.name common_module) = qual_name
 
 let is_infix_op qual_name var_name =
-  let name = C.Module.Var.Name.to_string var_name in
+  let name = C.Var.Name.to_string var_name in
   has_common_name qual_name && List.exists ((=) name) infix_operators
 
 let is_wrapped_op op =
