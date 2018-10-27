@@ -18,17 +18,16 @@ let emit_require modname =
   let require_path = String.concat "." parts in
   sprintf "%s = require 'flopcore.%s'" alias require_path
 
-let emit_num n =
-  Lua_stmt.make_expr (sprintf "%f" n)
+let emit_num num =
+  Lua_stmt.make_expr (sprintf "%f" num)
 
-let emit_str s =
-  Lua_stmt.make_expr (sprintf "\"%s\"" s)
+let emit_str str =
+  Lua_stmt.make_expr (sprintf "\"%s\"" str)
 
-let emit_sym s =
-  let symbol =
-    match s with
-    | C.Name.Var.Local s -> s
-    | C.Name.Var.Module (_, vn) -> C.Var.Name.to_string vn in
+let emit_sym sym =
+  let symbol = match sym with
+    | C.Name.Var.Local name -> name
+    | C.Name.Var.Module (_, varname) -> C.Var.Name.to_string varname in
   Lua_stmt.make_expr symbol
 
 let vardef_name vardef =
@@ -126,17 +125,31 @@ let emit_apply fn callable args =
   (*| N.Apply (f, a) -> emit_apply fn f a*)
   | _ -> assert false
 
+let build_assign_stmts fn bindings =
+  List.map (fun b ->
+    let (name, expr) = N.Binding.to_tuple b in
+    let name = N.Binding.Name.to_string name in
+    let result = sprintf "__rec1.%s =" name in
+    Lua_stmt.to_result_string ~target:result (fn expr)) bindings
+
+let emit_cons fn bindings =
+  let bind_strs = build_assign_stmts fn bindings in
+  let bind_str = String.concat "\n" bind_strs in
+  let let_str = sprintf "__rec1 = {}\ndo\n%s\nend" bind_str in
+  Lua_stmt.make_stmt "__rec1" let_str
+
 let rec emit_node = function
-  | N.NumLit n -> emit_num n
-  | N.StrLit s -> emit_str s
-  | N.SymLit s -> emit_sym s
-  | N.Rec (n, f) -> Lua_stmt.make_expr ""
-  | N.Def (n, e) -> emit_def emit_node n e
-  | N.Fn (p, _, b) -> emit_fn emit_node p b
-  | N.If (t, i, e) -> emit_if emit_node t i e
-  | N.Let (b, e) -> emit_let emit_node b e
-  | N.Apply (f, a) -> emit_apply emit_node f a
-  | N.Cast (t, e) -> emit_node e
+  | N.NumLit num -> emit_num num
+  | N.StrLit str -> emit_str str
+  | N.SymLit sym -> emit_sym sym
+  | N.Rec _ -> Lua_stmt.make_expr ""
+  | N.Def (name, expr) -> emit_def emit_node name expr
+  | N.Fn (params, _, body) -> emit_fn emit_node params body
+  | N.If (tst, iff, els) -> emit_if emit_node tst iff els
+  | N.Let (bindings, expr) -> emit_let emit_node bindings expr
+  | N.Apply (callable, args) -> emit_apply emit_node callable args
+  | N.Cons (_, bindings) -> emit_cons emit_node bindings
+  | N.Cast (_, expr) -> emit_node expr
 
 let emit_typed_node (node, t) =
   Lua_stmt.to_result_string ~target:"" (emit_node node)
