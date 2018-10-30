@@ -24,11 +24,12 @@ let emit_num num =
 let emit_str str =
   Lua_stmt.make_expr (sprintf "\"%s\"" str)
 
+let emit_name = function
+  | C.Name.Var.Local name -> name
+  | C.Name.Var.Module (_, varname) -> C.Var.Name.to_string varname
+
 let emit_sym sym =
-  let symbol = match sym with
-    | C.Name.Var.Local name -> name
-    | C.Name.Var.Module (_, varname) -> C.Var.Name.to_string varname in
-  Lua_stmt.make_expr symbol
+  Lua_stmt.make_expr (emit_name sym)
 
 let vardef_name vardef =
   N.VarDef.(to_tuple vardef |> fst |> Name.to_string)
@@ -138,6 +139,15 @@ let emit_cons fn bindings =
   let let_str = sprintf "__rec1 = {}\ndo\n%s\nend" bind_str in
   Lua_stmt.make_stmt "__rec1" let_str
 
+let emit_get fn record field =
+  match record with
+  | Node.SymLit name -> begin
+    let record = emit_name name in
+    let field = N.Name.to_string field in
+    Lua_stmt.make_expr (sprintf "%s.%s" record field)
+  end
+  | _ -> assert false
+
 let rec emit_node = function
   | N.NumLit num -> emit_num num
   | N.StrLit str -> emit_str str
@@ -149,6 +159,7 @@ let rec emit_node = function
   | N.Let (bindings, expr) -> emit_let emit_node bindings expr
   | N.Apply (callable, args) -> emit_apply emit_node callable args
   | N.Cons (_, bindings) -> emit_cons emit_node bindings
+  | N.Get (record, field) -> emit_get emit_node record field
   | N.Cast (_, expr) -> emit_node expr
 
 let emit_typed_node (node, t) =
