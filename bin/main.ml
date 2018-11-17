@@ -35,7 +35,7 @@ let compile filename =
   | Error e -> sprintf "error: %s" (Chunkee.Cmpl_err.message e)
   | Ok (_, nodes) ->
       let lua = Kludge.Emit.emit nodes in
-      String.concat "\n" lua
+      String.concat "\n\n" lua
 
 let main () =
   let usage = "Usage: kludge [options] [main]" in
