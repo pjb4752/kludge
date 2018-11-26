@@ -1,15 +1,40 @@
 open Printf
+open Thwack
 open Thwack.Extensions
 
 module C = Chunkee
 module Node = C.Ast.Resolved_node
 module N = C.Ast.Resolved_node
 
+module CharMap = Map.Make(Char)
+
+let char_maps = CharMap.empty |>
+  (CharMap.add '+' (String.to_chars "__plus__")) |>
+  (CharMap.add '-' (String.to_chars "__dash__")) |>
+  (CharMap.add '*' (String.to_chars "__astx__")) |>
+  (CharMap.add '!' (String.to_chars "__exlp__")) |>
+  (CharMap.add '?' (String.to_chars "__qstm__"))
+
 let is_infix_op = function
-  | C.Name.Var.Module (qn, vn) -> Stdlib.is_infix_op qn vn
+  | C.Name.Var.Module (mod_name, var_name) -> begin
+    let var_name = C.Var.Name.to_string var_name in
+    match Stdlib.find_lua_module mod_name with
+    | Some modul -> Lua_module.operator_exists modul var_name
+    | None -> false
+  end
   | C.Name.Var.Local _ -> false
 
 let emit_mod_alias parts = String.concat "_" parts
+
+let escape_char chr =
+  Option.get_else (CharMap.find_opt chr char_maps) [chr]
+
+let escape_chars chars =
+  List.fold_left (fun accum chr ->
+    escape_char chr |> List.append accum) [] chars
+
+let escape_name name =
+  String.to_chars name |> escape_chars |> String.from_chars
 
 let emit_require modname =
   let parts = C.Mod_name.to_list modname in
@@ -24,15 +49,24 @@ let emit_num num =
 let emit_str str =
   Lua_snippet.make_expr (sprintf "\"%s\"" str)
 
+let find_operator mod_name var_name =
+  Option.(
+    (Stdlib.find_lua_module mod_name) >>= fun modul ->
+    (Lua_module.find_operator_name modul var_name) >>= fun var_name ->
+    return var_name)
+
 let emit_name = function
-  | C.Name.Var.Local name -> name
-  | C.Name.Var.Module (_, varname) -> C.Var.Name.to_string varname
+  | C.Name.Var.Local name -> escape_name name
+  | C.Name.Var.Module (mod_name, var_name) ->
+    let var_name = C.Var.Name.to_string var_name in
+    let maybe_name = find_operator mod_name var_name in
+    Option.get_else maybe_name @@ escape_name var_name
 
 let emit_sym sym =
-  Lua_snippet.make_expr (emit_name sym)
+  Lua_snippet.make_expr @@ emit_name sym
 
 let emit_def fn name expr =
-  let name = N.Name.to_string name in
+  let name = N.Name.to_string name |> escape_name in
   let expr_snippet = fn expr in
   let result_expr = Lua_snippet.result_expr expr_snippet in
   let assignment = sprintf "%s = %s" name result_expr in
@@ -40,7 +74,7 @@ let emit_def fn name expr =
   Lua_snippet.insert_preamble def_stmt expr_snippet
 
 let vardef_name vardef =
-  N.VarDef.(to_tuple vardef |> fst |> Name.to_string)
+  N.VarDef.(to_tuple vardef |> fst |> Name.to_string |> escape_name)
 
 let param_str params =
   let params = List.map vardef_name params in
@@ -69,7 +103,7 @@ let emit_if fn tst iff els =
 let build_binding_stmts fn bindings =
   List.map (fun b ->
     let (name, expr) = N.Binding.to_tuple b in
-    let name = N.Binding.Name.to_string name in
+    let name = N.Binding.Name.to_string name |> escape_name in
     let result = sprintf "%s =" name in
     Lua_snippet.lua_string ~target:result (fn expr)) bindings
 
@@ -135,7 +169,7 @@ let emit_apply fn callable args =
 let build_assign_stmts result_var fn bindings =
   List.map (fun b ->
     let (name, expr) = N.Binding.to_tuple b in
-    let name = N.Binding.Name.to_string name in
+    let name = N.Binding.Name.to_string name |> escape_name in
     let result = sprintf "%s.%s =" result_var name in
     Lua_snippet.lua_string ~target:result (fn expr)) bindings
 

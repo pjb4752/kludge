@@ -1,0 +1,45 @@
+module C = Chunkee
+
+type definition_t =
+  | Constant of string
+  | Function of string
+  | Operator of Lua_operator.t
+
+type t = {
+  definition: definition_t;
+  tipe: C.Type.t;
+}
+
+let make_const str tipe =
+  { definition = Constant str; tipe }
+
+let make_fn str tipe =
+  { definition = Function str; tipe }
+
+let make_simple_op name wrapper tipe =
+  let operator = Lua_operator.make_simple name wrapper in
+  { definition = Operator operator; tipe }
+
+let make_mapped_op name wrapper mapping tipe =
+  let operator = Lua_operator.make_mapped name wrapper mapping in
+  { definition = Operator operator; tipe }
+
+let name { definition } =
+  match definition with
+  | Constant str -> str
+  | Function str -> str
+  | Operator op -> Lua_operator.name op
+
+let compiler_name { definition } =
+  match definition with
+  | Constant str -> str
+  | Function str -> str
+  | Operator op -> Lua_operator.compiler_name op
+
+let tipe { tipe } = tipe
+
+let compiler_operator_name { definition } compiler_name =
+  match definition with
+  | Operator lua_op when Lua_operator.compiler_name lua_op = compiler_name ->
+      Some (Lua_operator.name lua_op)
+  | Operator _ | Constant _ | Function _ -> None
