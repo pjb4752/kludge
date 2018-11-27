@@ -14,7 +14,7 @@ val is_stmt: t -> bool
 
 val preamble_string: t -> string
 
-val result_expr: ?wrap_ops:bool -> t -> string
+val result_expr: t -> string
 
 val lua_string: ?target:string -> t -> string
 

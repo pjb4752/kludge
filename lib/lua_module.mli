@@ -8,7 +8,7 @@ val make: C.Mod_name.t -> Lua_var.t list -> t
 
 val name: t -> C.Mod_name.t
 
-val find_operator_name: t -> string -> string option
+val find_operator: t -> string -> Lua_operator.t option
 
 val operator_exists: t -> string -> bool
 

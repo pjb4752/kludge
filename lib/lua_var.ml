@@ -38,8 +38,8 @@ let compiler_name { definition } =
 
 let tipe { tipe } = tipe
 
-let compiler_operator_name { definition } compiler_name =
+let compiler_operator { definition } compiler_name =
+  let get_name = Lua_operator.compiler_name in
   match definition with
-  | Operator lua_op when Lua_operator.compiler_name lua_op = compiler_name ->
-      Some (Lua_operator.name lua_op)
+  | Operator lua_op when (get_name lua_op) = compiler_name -> Some lua_op
   | Operator _ | Constant _ | Function _ -> None

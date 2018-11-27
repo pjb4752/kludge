@@ -16,4 +16,4 @@ val compiler_name: t -> string
 
 val tipe: t -> C.Type.t
 
-val compiler_operator_name: t -> string -> string option
+val compiler_operator: t -> string -> Lua_operator.t option

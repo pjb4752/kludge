@@ -12,18 +12,18 @@ let make name vars = { name; vars }
 
 let name { name } = name
 
-let find_operator_name { vars } compiler_name =
+let find_operator { vars } compiler_name =
   let rec find' = function
     | [] -> None
     | var :: vars -> begin
-      match Lua_var.compiler_operator_name var compiler_name with
-      | Some name -> Some name
+      match Lua_var.compiler_operator var compiler_name with
+      | Some lua_operator -> Some lua_operator
       | None -> find' vars
     end in
   find' vars
 
 let operator_exists modul compiler_name =
-  T.Option.is_some @@ find_operator_name modul compiler_name
+  T.Option.is_some @@ find_operator modul compiler_name
 
 let compiler_var modul var =
   let name = Lua_var.compiler_name var and tipe = Lua_var.tipe var in

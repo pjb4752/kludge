@@ -52,18 +52,20 @@ let emit_str str =
 let find_operator mod_name var_name =
   Option.(
     (Stdlib.find_lua_module mod_name) >>= fun modul ->
-    (Lua_module.find_operator_name modul var_name) >>= fun var_name ->
-    return var_name)
+    (Lua_module.find_operator modul var_name) >>= fun operator ->
+    return operator)
 
-let emit_name = function
+let emit_name ?wrap_ops:(wrap_ops=true) = function
   | C.Name.Var.Local name -> escape_name name
   | C.Name.Var.Module (mod_name, var_name) ->
     let var_name = C.Var.Name.to_string var_name in
-    let maybe_name = find_operator mod_name var_name in
-    Option.get_else maybe_name @@ escape_name var_name
+    match find_operator mod_name var_name with
+    | Some operator when wrap_ops -> Lua_operator.wrapper operator
+    | Some operator -> Lua_operator.name operator
+    | None -> escape_name var_name
 
-let emit_sym sym =
-  Lua_snippet.make_expr @@ emit_name sym
+let emit_sym ?wrap_ops:(wrap_ops=true) symbol =
+  Lua_snippet.make_expr @@ emit_name ~wrap_ops:wrap_ops symbol
 
 let emit_def fn name expr =
   let name = N.Name.to_string name |> escape_name in
@@ -128,7 +130,7 @@ let build_args fn args =
   (result_exprs, arg_exprs)
 
 let emit_infix_apply fn operator args =
-  let operator = Lua_snippet.result_expr ~wrap_ops:false (emit_sym operator) in
+  let operator = Lua_snippet.result_expr (emit_sym ~wrap_ops:false operator) in
   let (result_exprs, arg_exprs) = build_args fn args in
   let (left, right) =
     match result_exprs with
@@ -183,7 +185,7 @@ let emit_cons fn bindings =
 let emit_get record field =
   match record with
   | Node.SymLit name -> begin
-    let record = emit_name name in
+    let record = emit_name ~wrap_ops:false name in
     let field = N.Name.to_string field in
     Lua_snippet.make_expr (sprintf "%s.%s" record field)
   end
@@ -192,7 +194,7 @@ let emit_get record field =
 let emit_set fn record field expr =
   match record with
   | Node.SymLit name -> begin
-    let record = emit_name name in
+    let record = emit_name ~wrap_ops:false name in
     let field = N.Name.to_string field in
     let expr_snippet = fn expr in
     let result_expr = Lua_snippet.result_expr expr_snippet in

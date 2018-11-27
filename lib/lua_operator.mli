@@ -7,3 +7,5 @@ val make_mapped: string -> string -> string -> t
 val name: t -> string
 
 val compiler_name: t -> string
+
+val wrapper: t -> string

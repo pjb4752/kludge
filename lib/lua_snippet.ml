@@ -39,10 +39,8 @@ let preamble_string snippet =
         List.fold_left preamble_string' (stmt :: strings) snippets in
   String.concat "\n" (preamble_string' [] snippet)
 
-let result_expr ?wrap_ops:(wrap_ops=true) = function
-  | Expr (_, expr) when not wrap_ops -> expr
+let result_expr = function
   | Expr (_, expr) -> expr
-  (*| Expr (_, expr) -> Option.get_else (Stdlib.wrapped_op expr) expr*)
   | ResultStmt (_, { var }) -> var
   | UnitStmt _ -> assert false
 
