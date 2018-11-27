@@ -6,18 +6,18 @@ module C = Chunkee
 module Node = C.Ast.Resolved_node
 module N = C.Ast.Resolved_node
 
-module CharMap = Map.Make(Char)
+module Char_map = Map.Make(Char)
 
-let char_maps = CharMap.empty |>
-  (CharMap.add '+' (String.to_chars "__plus__")) |>
-  (CharMap.add '-' (String.to_chars "__dash__")) |>
-  (CharMap.add '*' (String.to_chars "__astx__")) |>
-  (CharMap.add '!' (String.to_chars "__exlp__")) |>
-  (CharMap.add '?' (String.to_chars "__qstm__")) |>
-  (CharMap.add '/' (String.to_chars "__slsh__")) |>
-  (CharMap.add '>' (String.to_chars "__grtn__")) |>
-  (CharMap.add '<' (String.to_chars "__lstn__")) |>
-  (CharMap.add '=' (String.to_chars "__eqls__"))
+let char_maps = Char_map.empty |>
+  (Char_map.add '+' (String.to_chars "__plus__")) |>
+  (Char_map.add '-' (String.to_chars "__dash__")) |>
+  (Char_map.add '*' (String.to_chars "__astx__")) |>
+  (Char_map.add '!' (String.to_chars "__exlp__")) |>
+  (Char_map.add '?' (String.to_chars "__qstm__")) |>
+  (Char_map.add '/' (String.to_chars "__slsh__")) |>
+  (Char_map.add '>' (String.to_chars "__grtn__")) |>
+  (Char_map.add '<' (String.to_chars "__lstn__")) |>
+  (Char_map.add '=' (String.to_chars "__eqls__"))
 
 let is_infix_op = function
   | C.Name.Var.Module (mod_name, var_name) -> begin
@@ -31,7 +31,7 @@ let is_infix_op = function
 let emit_mod_alias parts = String.concat "_" parts
 
 let escape_char chr =
-  Option.get_else (CharMap.find_opt chr char_maps) [chr]
+  Option.get_else (Char_map.find_opt chr char_maps) [chr]
 
 let escape_chars chars =
   List.fold_left (fun accum chr ->
