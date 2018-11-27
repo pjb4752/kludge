@@ -13,7 +13,11 @@ let char_maps = CharMap.empty |>
   (CharMap.add '-' (String.to_chars "__dash__")) |>
   (CharMap.add '*' (String.to_chars "__astx__")) |>
   (CharMap.add '!' (String.to_chars "__exlp__")) |>
-  (CharMap.add '?' (String.to_chars "__qstm__"))
+  (CharMap.add '?' (String.to_chars "__qstm__")) |>
+  (CharMap.add '/' (String.to_chars "__slsh__")) |>
+  (CharMap.add '>' (String.to_chars "__grtn__")) |>
+  (CharMap.add '<' (String.to_chars "__lstn__")) |>
+  (CharMap.add '=' (String.to_chars "__eqls__"))
 
 let is_infix_op = function
   | C.Name.Var.Module (mod_name, var_name) -> begin
