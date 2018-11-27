@@ -71,9 +71,9 @@ let emit_name ?wrap_ops:(wrap_ops=true) = function
 let emit_sym ?wrap_ops:(wrap_ops=true) symbol =
   Lua_snippet.make_expr @@ emit_name ~wrap_ops:wrap_ops symbol
 
-let emit_def fn name expr =
+let emit_def fn generator name expr =
   let name = N.Name.to_string name |> escape_name in
-  let expr_snippet = fn expr in
+  let expr_snippet = fn generator expr in
   let result_expr = Lua_snippet.result_expr expr_snippet in
   let assignment = sprintf "%s = %s" name result_expr in
   let def_stmt = Lua_snippet.make_unit_stmt assignment in
@@ -86,19 +86,19 @@ let param_str params =
   let params = List.map vardef_name params in
   String.concat ", " params
 
-let emit_fn fn params body =
-  let params = param_str params and body_expr = fn body in
+let emit_fn fn generator params body =
+  let params = param_str params and body_expr = fn generator body in
   let body_expr = Lua_snippet.lua_string body_expr in
   let fn_expr = sprintf "function(%s)\n%s\nend" params body_expr in
   Lua_snippet.make_expr fn_expr
 
-let emit_if fn tst iff els =
-  let result_var = "__if1" in
+let emit_if fn generator tst iff els =
+  let (generator, result_var) = Name_gen.next_value generator in
   let target = sprintf "%s =" result_var in
-  let tst_expr = fn tst in
+  let tst_expr = fn generator tst in
   let tst_result = Lua_snippet.result_expr tst_expr in
-  let iff_str = Lua_snippet.lua_string ~target:target (fn iff) in
-  let els_str = Lua_snippet.lua_string ~target:target (fn els) in
+  let iff_str = Lua_snippet.lua_string ~target:target (fn generator iff) in
+  let els_str = Lua_snippet.lua_string ~target:target (fn generator els) in
   let if_str = String.concat "\n" [
     sprintf "%s nil\nif %s then" target tst_result;
     sprintf "%s\nelse\n%s\nend" iff_str els_str
@@ -113,12 +113,12 @@ let build_binding_stmts fn bindings =
     let result = sprintf "%s =" name in
     Lua_snippet.lua_string ~target:result (fn expr)) bindings
 
-let emit_let fn bindings expr =
-  let result_var = "__let1" in
+let emit_let fn generator bindings expr =
+  let (generator, result_var) = Name_gen.next_value generator in
   let target = sprintf "%s =" result_var in
-  let bind_strs = build_binding_stmts fn bindings in
+  let bind_strs = build_binding_stmts (fn generator) bindings in
   let bind_str = String.concat "\n" bind_strs in
-  let expr_str = Lua_snippet.lua_string ~target:target (fn expr) in
+  let expr_str = Lua_snippet.lua_string ~target:target (fn generator expr) in
   let let_str = sprintf "%s nil\ndo\n%s\n%s\nend" target bind_str expr_str in
   Lua_snippet.make_result_stmt result_var let_str
 
@@ -152,23 +152,23 @@ let emit_prefix_apply fn name args =
   let application = Lua_snippet.make_expr application in
   List.fold_left Lua_snippet.insert_preamble application arg_exprs
 
-let emit_literal_apply fn fn_lit args =
-  let result_var = "__fn" in
-  let fn_expr = Lua_snippet.result_expr (fn fn_lit) in
+let emit_literal_apply fn generator fn_lit args =
+  let (generator, result_var) = Name_gen.next_value generator in
+  let fn_expr = Lua_snippet.result_expr (fn generator fn_lit) in
   let fn_assignment = sprintf "%s = %s" result_var fn_expr in
   let fn_preamble = Lua_snippet.make_result_stmt result_var fn_assignment in
-  let (result_exprs, arg_exprs) = build_args fn args in
+  let (result_exprs, arg_exprs) = build_args (fn generator) args in
   let arguments = String.concat ", " result_exprs in
   let application = sprintf "%s(%s)" result_var arguments in
   let application = Lua_snippet.make_expr application in
   let preamble = (fn_preamble :: arg_exprs) in
   List.fold_left Lua_snippet.insert_preamble application preamble
 
-let emit_apply fn callable args =
+let emit_apply fn generator callable args =
   match callable with
-  | N.SymLit n when is_infix_op n -> emit_infix_apply fn n args
-  | N.SymLit n -> emit_prefix_apply fn n args
-  | N.Fn (p, r, b) -> emit_literal_apply fn (N.Fn (p, r, b)) args
+  | N.SymLit n when is_infix_op n -> emit_infix_apply (fn generator) n args
+  | N.SymLit n -> emit_prefix_apply (fn generator) n args
+  | N.Fn (p, r, b) -> emit_literal_apply fn generator (N.Fn (p, r, b)) args
   (*| N.Apply (f, a) -> emit_apply fn f a*)
   | _ -> assert false
 
@@ -179,9 +179,9 @@ let build_assign_stmts result_var fn bindings =
     let result = sprintf "%s.%s =" result_var name in
     Lua_snippet.lua_string ~target:result (fn expr)) bindings
 
-let emit_cons fn bindings =
-  let result_var = "__rec1" in
-  let bind_strs = build_assign_stmts result_var fn bindings in
+let emit_cons fn generator bindings =
+  let (generator, result_var) = Name_gen.next_value generator in
+  let bind_strs = build_assign_stmts result_var (fn generator) bindings in
   let bind_str = String.concat "\n" bind_strs in
   let let_str = sprintf "%s = {}\ndo\n%s\nend" result_var bind_str in
   Lua_snippet.make_result_stmt result_var let_str
@@ -195,12 +195,12 @@ let emit_get record field =
   end
   | _ -> assert false
 
-let emit_set fn record field expr =
+let emit_set fn generator record field expr =
   match record with
   | Node.SymLit name -> begin
     let record = emit_name ~wrap_ops:false name in
     let field = N.Name.to_string field in
-    let expr_snippet = fn expr in
+    let expr_snippet = fn generator expr in
     let result_expr = Lua_snippet.result_expr expr_snippet in
     let assignment = sprintf "%s.%s = %s" record field result_expr in
     let assignment = Lua_snippet.make_unit_stmt assignment in
@@ -208,22 +208,23 @@ let emit_set fn record field expr =
   end
   | _ -> assert false
 
-let rec emit_node = function
+let rec emit_node generator = function
   | N.NumLit num -> emit_num num
   | N.StrLit str -> emit_str str
   | N.SymLit sym -> emit_sym sym
   | N.Rec _ -> Lua_snippet.make_expr ""
-  | N.Def (name, expr) -> emit_def emit_node name expr
-  | N.Fn (params, _, body) -> emit_fn emit_node params body
-  | N.If (tst, iff, els) -> emit_if emit_node tst iff els
-  | N.Let (bindings, expr) -> emit_let emit_node bindings expr
-  | N.Apply (callable, args) -> emit_apply emit_node callable args
-  | N.Cons (_, bindings) -> emit_cons emit_node bindings
+  | N.Def (name, expr) -> emit_def emit_node generator name expr
+  | N.Fn (params, _, body) -> emit_fn emit_node generator params body
+  | N.If (tst, iff, els) -> emit_if emit_node generator tst iff els
+  | N.Let (bindings, expr) -> emit_let emit_node generator bindings expr
+  | N.Apply (callable, args) -> emit_apply emit_node generator callable args
+  | N.Cons (_, bindings) -> emit_cons emit_node generator bindings
   | N.Get (record, field) -> emit_get record field
-  | N.Set (record, field, expr) -> emit_set emit_node record field expr
-  | N.Cast (_, expr) -> emit_node expr
+  | N.Set (record, field, expr) -> emit_set emit_node generator record field expr
+  | N.Cast (_, expr) -> emit_node generator expr
 
 let emit_typed_node (node, t) =
-  Lua_snippet.lua_string ~target:"" (emit_node node)
+  let generator = Name_gen.generator in
+  Lua_snippet.lua_string ~target:"" (emit_node generator node)
 
 let emit nodes = List.map emit_typed_node nodes
