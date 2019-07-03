@@ -24,21 +24,21 @@ let make_mapped_op name wrapper mapping tipe =
   let operator = Lua_operator.make_mapped name wrapper mapping in
   { definition = Operator operator; tipe }
 
-let name { definition } =
+let name { definition; _ } =
   match definition with
   | Constant str -> str
   | Function str -> str
   | Operator op -> Lua_operator.name op
 
-let compiler_name { definition } =
+let compiler_name { definition; _ } =
   match definition with
   | Constant str -> str
   | Function str -> str
   | Operator op -> Lua_operator.compiler_name op
 
-let tipe { tipe } = tipe
+let tipe { tipe; _ } = tipe
 
-let compiler_operator { definition } compiler_name =
+let compiler_operator { definition; _ } compiler_name =
   let get_name = Lua_operator.compiler_name in
   match definition with
   | Operator lua_op when (get_name lua_op) = compiler_name -> Some lua_op

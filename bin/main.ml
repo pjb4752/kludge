@@ -1,5 +1,4 @@
 open Printf
-open Thwack.Result
 
 let verbose = ref false
 let main = ref None
@@ -32,7 +31,7 @@ let compile filename =
   let table = Chunkee.Symbol_table.make pervasive modul in
   let source = read_source_file filename in
   match compile_module table source with
-  | Error e -> sprintf "error: %s" (Chunkee.Cmpl_err.message e)
+  | Error e -> Chunkee.Cmpl_err.to_string e
   | Ok (_, nodes) ->
       let lua = Kludge.Emit.emit nodes in
       String.concat "\n\n" lua

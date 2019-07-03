@@ -223,7 +223,7 @@ let rec emit_node generator = function
   | N.Set (record, field, expr) -> emit_set emit_node generator record field expr
   | N.Cast (_, expr) -> emit_node generator expr
 
-let emit_typed_node (node, t) =
+let emit_typed_node (node, _) =
   let generator = Name_gen.generator in
   Lua_snippet.lua_string ~target:"" (emit_node generator node)
 

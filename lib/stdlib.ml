@@ -1,4 +1,3 @@
-open Thwack.Option
 module C = Chunkee
 
 let lua_common = Core_common.(Lua_module.make name vars)

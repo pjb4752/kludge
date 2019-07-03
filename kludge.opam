@@ -1,11 +1,12 @@
-opam-version: "1.2"
+opam-version: "2.0"
 name: "kludge"
+synopsis: "Compiler backend for Flop"
 version: "0.0.1"
 maintainer: "pjb4752 <pjb4752@gmail.com>"
 authors: "pjb4752 <pjb4752@gmail.com>"
 homepage: "https://github.com/pjb4752/kludge"
 bug-reports: "https://github.com/pjb4752/kludge/issues"
-dev-repo: "https://github.com/pjb4752/kludge.git"
+dev-repo: "git://github.com/pjb4752/kludge.git"
 build: [
   ["jbuilder" "build" "--only" "kludge" "--root" "." "-j" jobs "@install"]
 ]

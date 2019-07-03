@@ -1,0 +1,7 @@
+(executables
+  (names main)
+  (libraries kludge))
+
+(install
+  (section bin)
+  (files (main.exe as kludge)))

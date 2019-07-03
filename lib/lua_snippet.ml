@@ -1,4 +1,3 @@
-open Thwack
 open Printf
 
 type expr = string
@@ -35,13 +34,13 @@ let preamble_string snippet =
         List.fold_left preamble_string' strings snippets
     | UnitStmt (snippets, _) ->
         List.fold_left preamble_string' strings snippets
-    | ResultStmt (snippets, { stmt }) ->
+    | ResultStmt (snippets, { stmt; _ }) ->
         List.fold_left preamble_string' (stmt :: strings) snippets in
   String.concat "\n" (preamble_string' [] snippet)
 
 let result_expr = function
   | Expr (_, expr) -> expr
-  | ResultStmt (_, { var }) -> var
+  | ResultStmt (_, { var; _ }) -> var
   | UnitStmt _ -> assert false
 
 let result_string target preamble snippet =

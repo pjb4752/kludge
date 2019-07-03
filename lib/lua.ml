@@ -50,7 +50,7 @@ let print_stack lua_state =
 
 let exec_last lua_state =
   let result = pcall lua_state 0 Lua_api_lib.multret in
-  result >>= fun m -> (print_stack lua_state) >>= fun m -> return m
+  result >>= fun _ -> (print_stack lua_state) >>= fun m -> return m
 
 let new_state () =
   let lua_state = Lua_aux_lib.newstate () in
@@ -58,6 +58,6 @@ let new_state () =
   lua_state
 
 let eval lua_state lua_str =
-  (load_string lua_state lua_str) >>= fun ok ->
+  (load_string lua_state lua_str) >>= fun _ ->
   (exec_last lua_state) >>= fun ok ->
   return ok

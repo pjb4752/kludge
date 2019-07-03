@@ -10,9 +10,9 @@ type t = {
 
 let make name vars = { name; vars }
 
-let name { name } = name
+let name { name; _ } = name
 
-let find_operator { vars } compiler_name =
+let find_operator { vars; _ } compiler_name =
   let rec find' = function
     | [] -> None
     | var :: vars -> begin
