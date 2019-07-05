@@ -8,5 +8,5 @@ homepage: "https://github.com/pjb4752/kludge"
 bug-reports: "https://github.com/pjb4752/kludge/issues"
 dev-repo: "git://github.com/pjb4752/kludge.git"
 build: [
-  ["jbuilder" "build" "--only" "kludge" "--root" "." "-j" jobs "@install"]
+  ["dune" "build" "--only" "kludge" "--root" "." "-j" jobs "@install"]
 ]
