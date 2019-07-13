@@ -166,9 +166,9 @@ let emit_literal_apply fn generator fn_lit args =
 
 let emit_apply fn generator callable args =
   match callable with
-  | N.SymLit n when is_infix_op n -> emit_infix_apply (fn generator) n args
-  | N.SymLit n -> emit_prefix_apply (fn generator) n args
-  | N.Fn (p, r, b) -> emit_literal_apply fn generator (N.Fn (p, r, b)) args
+  | N.SymLit (n, _) when is_infix_op n -> emit_infix_apply (fn generator) n args
+  | N.SymLit (n, _) -> emit_prefix_apply (fn generator) n args
+  | N.Fn (p, r, b, m) -> emit_literal_apply fn generator (N.Fn (p, r, b, m)) args
   (*| N.Apply (f, a) -> emit_apply fn f a*)
   | _ -> assert false
 
@@ -188,7 +188,7 @@ let emit_cons fn generator bindings =
 
 let emit_get record field =
   match record with
-  | Node.SymLit name -> begin
+  | Node.SymLit (name, _) -> begin
     let record = emit_name ~wrap_ops:false name in
     let field = N.Name.to_string field in
     Lua_snippet.make_expr (sprintf "%s.%s" record field)
@@ -197,7 +197,7 @@ let emit_get record field =
 
 let emit_set fn generator record field expr =
   match record with
-  | Node.SymLit name -> begin
+  | Node.SymLit (name, _) -> begin
     let record = emit_name ~wrap_ops:false name in
     let field = N.Name.to_string field in
     let expr_snippet = fn generator expr in
@@ -209,19 +209,19 @@ let emit_set fn generator record field expr =
   | _ -> assert false
 
 let rec emit_node generator = function
-  | N.NumLit num -> emit_num num
-  | N.StrLit str -> emit_str str
-  | N.SymLit sym -> emit_sym sym
+  | N.NumLit (num, _) -> emit_num num
+  | N.StrLit (str, _) -> emit_str str
+  | N.SymLit (sym, _) -> emit_sym sym
   | N.Rec _ -> Lua_snippet.make_expr ""
-  | N.Def (name, expr) -> emit_def emit_node generator name expr
-  | N.Fn (params, _, body) -> emit_fn emit_node generator params body
-  | N.If (tst, iff, els) -> emit_if emit_node generator tst iff els
-  | N.Let (bindings, expr) -> emit_let emit_node generator bindings expr
-  | N.Apply (callable, args) -> emit_apply emit_node generator callable args
-  | N.Cons (_, bindings) -> emit_cons emit_node generator bindings
-  | N.Get (record, field) -> emit_get record field
-  | N.Set (record, field, expr) -> emit_set emit_node generator record field expr
-  | N.Cast (_, expr) -> emit_node generator expr
+  | N.Def (name, expr, _) -> emit_def emit_node generator name expr
+  | N.Fn (params, _, body, _) -> emit_fn emit_node generator params body
+  | N.If (tst, iff, els, _) -> emit_if emit_node generator tst iff els
+  | N.Let (bindings, expr, _) -> emit_let emit_node generator bindings expr
+  | N.Apply (callable, args, _) -> emit_apply emit_node generator callable args
+  | N.Cons (_, bindings, _) -> emit_cons emit_node generator bindings
+  | N.Get (record, field, _) -> emit_get record field
+  | N.Set (record, field, expr, _) -> emit_set emit_node generator record field expr
+  | N.Cast (_, expr, _) -> emit_node generator expr
 
 let emit_typed_node (node, _) =
   let generator = Name_gen.generator in
